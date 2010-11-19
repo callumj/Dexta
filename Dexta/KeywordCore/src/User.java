@@ -48,7 +48,12 @@ public class User extends DBAbstract {
 		//check if a user exists
 		User searchUser = new User();
 		searchUser.setEmail(this.getEmail());
-		if (!this.find(systemDB))
+		if (!searchUser.find(systemDB))
 			super.commit(systemDB);
+		else {
+			System.out.println(searchUser.getID());
+			this.put("_id", searchUser.getID()); //perform update
+			super.commit(systemDB);
+		}
 	}
 }

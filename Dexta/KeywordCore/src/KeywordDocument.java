@@ -9,7 +9,7 @@ public class KeywordDocument extends DBAbstract {
 	int position;
 	DB tempDB;
 	
-	public KeywordDocument(String keyword, Document document, int wordCount) {
+	public KeywordDocument(String keyword, Document document, int wordCount) throws Exception {
 		super();
 		word = new Keyword(keyword);
 		parent = document;
@@ -39,6 +39,8 @@ public class KeywordDocument extends DBAbstract {
 		this.setDocument();
 		this.setKeyword();
 		this.setPosition();
-		super.commit(systemDB);
+		//we don't want duplicates. The keyword ID, position, document and user define uniqueness
+		if (!this.find(systemDB))
+			super.commit(systemDB);
 	}
 }

@@ -26,7 +26,7 @@ public class DBAbstract extends BasicDBObject {
 	}
 	
 	public void commit(DB systemDB) {
-		this.getMongoCollection(systemDB).insert(this);
+		this.getMongoCollection(systemDB).save(this);
 	}
 	
 	public boolean find(DB systemDB) {

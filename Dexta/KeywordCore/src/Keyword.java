@@ -7,7 +7,7 @@ public class Keyword extends DBAbstract {
 	/**
 	 * Create a new keyword object, with the keyword
 	 */	
-	public Keyword(String word) {
+	public Keyword(String word) throws Exception {
 		super(); //init upper
 		setImportant(false);
 		setKeyword(word);
@@ -16,12 +16,17 @@ public class Keyword extends DBAbstract {
 	/**
 	 * Set the keyword
 	 */
-	public void setKeyword(String word) {
+	public void setKeyword(String word) throws Exception {
 		word = word.replaceAll("[^A-Za-z0-9 ]", "");
+		word = word.replaceAll("\\s+", " ");
+		
+		if (word.length() == 0)
+			throw new Exception("Word is empty");
+		
 		int numImportant = 0;
 		for (String innerWord : word.split(" ")) {
-			if (word.charAt(0) >= 65 && word.charAt(0) <= 90)
-			numImportant++;
+			if (innerWord.charAt(0) >= 65 && innerWord.charAt(0) <= 90)
+				numImportant++;
 		}
 		
 		if (numImportant >= 2)
