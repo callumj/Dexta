@@ -6,14 +6,23 @@ public class KeywordDocument extends DBAbstract {
 	
 	Document parent;
 	Keyword word;
-	int position;
+	KeywordPreview preview;
 	DB tempDB;
 	
-	public KeywordDocument(String keyword, Document document, int wordCount) throws Exception {
+	public KeywordDocument(String keyword, Document document) throws Exception {
 		super();
 		word = new Keyword(keyword);
 		parent = document;
-		position = wordCount;
+		this.setImportant(false);
+		
+		int numImportant = 0;
+		for (String innerWord : keyword.split(" ")) {
+			if (innerWord.charAt(0) >= 65 && innerWord.charAt(0) <= 90)
+				numImportant++;
+		}
+		
+		if (numImportant >= 2)
+			this.setImportant(true);
 	}
 	
 	public Keyword getKeyword() {
@@ -25,20 +34,40 @@ public class KeywordDocument extends DBAbstract {
 		this.put("user", parent.getUserID());
 	}
 	
-	private void setKeyword() {
+	private void setKeyword() {		
 		word.commit(tempDB);
 		this.put("keyword", word.getID());
 	}
 	
-	private void setPosition() {
+	public void setPosition(int position) {
 		this.put("position", position);
+	}
+	
+	public void setPreview(String previewTxt) {
+		preview = new KeywordPreview(previewTxt);
+	}
+	
+	/**
+	 * If this is a name of a person, or a name of a company it should be marked as important
+	 */
+	public void setImportant(boolean important) {
+		this.put("important", important);
+	}
+	
+	public Boolean isImportant() {
+		return (Boolean) this.get("important");
 	}
 	
 	public void commit(DB systemDB) {
 		tempDB = systemDB;
 		this.setDocument();
 		this.setKeyword();
-		this.setPosition();
+		
+		if (preview != null) {
+			preview.commit(systemDB);
+			this.put("preview", preview.getID());
+		}
+		
 		//we don't want duplicates. The keyword ID, position, document and user define uniqueness
 		if (!this.find(systemDB))
 			super.commit(systemDB);

@@ -2,6 +2,7 @@ package com.dexta.coreservices.models;
 
 import com.mongodb.Mongo;
 import com.mongodb.DB;
+import com.mongodb.BasicDBObject;
 
 public class Main
 { 
@@ -9,6 +10,14 @@ public class Main
 	{
 		Mongo m = new Mongo("localhost", 27019);
 		DB database = m.getDB("dexta");		
+		
+		//setup indexes
+		database.getCollection("keyword").createIndex(new BasicDBObject("word", 1));
+		database.getCollection("keywordpreview").createIndex(new BasicDBObject("text", 1));
+		database.getCollection("keyworddocument").createIndex(new BasicDBObject("user", 1));
+		database.getCollection("keyworddocument").createIndex(new BasicDBObject("document", 1));
+		database.getCollection("keyworddocument").createIndex(new BasicDBObject("keyword", 1));
+		database.getCollection("user").createIndex(new BasicDBObject("email", 1));
 		
 		User insert = new User("C", "Jones", "callum@callumj.com");
 		insert.setPassword("password");
