@@ -1,0 +1,7 @@
+com.dexta.coreservices.models
+com.dexta.coreservices.models.base
+com.dexta.coreservices.models.documents
+com.dexta.coreservices.models.keywords
+com.dexta.coreservices.models.services
+com.dexta.coreservices.models.users
+com.dexta.tools
