@@ -18,6 +18,10 @@ public class PendingDocument extends DBAbstract {
 		this.put("file_extension", extension.toLowerCase());
 	}
 	
+	public String getFileExtension() {
+		return (String) this.get("file_extension");
+	}
+	
 	public void setfileName(String fileName) {
 		this.put("file_name", fileName);
 		if (fileName.lastIndexOf(".") != -1)

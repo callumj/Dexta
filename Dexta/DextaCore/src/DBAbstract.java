@@ -8,16 +8,17 @@ import com.mongodb.DBObject;
 import com.mongodb.DBCursor;
 import org.bson.types.ObjectId;
 
-public class DBAbstract extends BasicDBObject {
-	
-	public static String DB_NAME = "keywords";
-	
+public class DBAbstract extends BasicDBObject {	
 	public DBAbstract() {
 		super(); //init upper
 	}
 	
+	public static String classToCollectionName(Class theClass) {
+		return theClass.getName().substring(theClass.getName().lastIndexOf('.') + 1, theClass.getName().length()).toLowerCase();
+	}
+	
 	private DBCollection getMongoCollection(DB systemDB) {
-		String thisCollectionName = this.getClass().getName().substring(this.getClass().getName().lastIndexOf('.') + 1, this.getClass().getName().length()).toLowerCase();
+		String thisCollectionName = classToCollectionName(this.getClass());
 		return systemDB.getCollection(thisCollectionName);
 	}
 	

@@ -66,9 +66,11 @@
 	        </fileset>
 	    </javadoc>
 	</target>
-
+	
+	<target name="quick-build" depends="clean,jar" />
+	
     <target name="clean-build" depends="clean,jar,javadoc"/>
 
-    <target name="main" depends="clean,clean-build"/>
+    <target name="main" depends="quick-build"/>
 
 </project>

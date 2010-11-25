@@ -1,14 +1,17 @@
 package com.dexta.coreservices.models.services;
 
 import com.dexta.coreservices.models.base.DBAbstract;
-
 import com.dexta.tools.Tools;
+import com.dexta.tools.StorageWrapper;
+
+import net.spy.memcached.MemcachedClient;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.ByteArrayOutputStream;
 import java.util.Random;
 import java.util.Calendar;
 import com.mongodb.DB;
@@ -31,8 +34,10 @@ public class AWSS3 extends StorageService {
 		this.put("reference", name);
 	}
 	
-	public void commit(DB systemDB) {
+	public void commit(StorageWrapper wrapper) {
 		//save the ioStream to the service
+		DB systemDB = wrapper.mongoDatabase;
+		MemcachedClient memcacheProvider = wrapper.memcachedServer;
 		ServiceProvider amazonS3 = new ServiceProvider("awss3");
 		if (amazonS3.find(systemDB)) {
 			Random r = new Random();
@@ -45,18 +50,21 @@ public class AWSS3 extends StorageService {
 				String randomIdentifier_hash = Tools.SHA512(randomIdentifier.toString());
 				//write the inputStream to a FileOutputStream
 		        File tmpWrite = new File("/tmp/aws_save" + randomIdentifier_hash);
-		        OutputStream out = new FileOutputStream(tmpWrite);
+		        OutputStream fileOut = new FileOutputStream(tmpWrite);
+				ByteArrayOutputStream rawBuffer = new ByteArrayOutputStream();
 
 		        int read=0;
 		        byte[] bytes = new byte[1024];
 
 		        while((read = tempStream.read(bytes))!= -1){
-		                out.write(bytes, 0, read);
+		                fileOut.write(bytes, 0, read);
+						rawBuffer.write(bytes, 0, read);
 		        }
-		
+				
 				tempStream.close();
-				out.flush();
-				out.close();
+				rawBuffer.flush();
+				fileOut.flush();
+				fileOut.close();
 				
 				//construct the AWS S3 client
 				BasicAWSCredentials awsCred = new BasicAWSCredentials((String) amazonS3.get("consumer_key"), (String) amazonS3.get("consumer_secret"));
@@ -65,8 +73,12 @@ public class AWSS3 extends StorageService {
 				if (putResult != null) {
 					this.setIndentifier(randomIdentifier_hash);
 					this.put("created", Calendar.getInstance().getTimeInMillis() / 1000);
-					this.superCommit(systemDB);
+					super.commit(systemDB);
 				}
+				//save in memcached
+				if (memcacheProvider != null)
+					memcacheProvider.set("aws_" + randomIdentifier_hash, wrapper.MAX_MEMCACHED_STORE_TIME, rawBuffer.toByteArray());
+				
 			} catch (Exception genErr) {
 				System.out.println(genErr);
 			}
