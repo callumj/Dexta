@@ -119,17 +119,17 @@ public class Dropbox extends Service {
 				
 				//first check if the same document has not been processed and stored already
 				Document testDocument = newDocument.toDocument();
-				testDocument.put("dropbox_revision", (Long) object.get("revision"));
+				testDocument.put("_dropbox_revision", (Long) object.get("revision"));
 				System.out.println("Now testing for: " + newDocument.getfileName());
 				if (!(testDocument.find(systemDB))) {
 					//now proceed to check if a similar document is in the queue (and not being processed)
 					newDocument.setLocked(false);
 					boolean findResult = newDocument.find(systemDB); //if we find one but with an older revision, we can update it
-					if ((newDocument.get("dropbox_revision") == null || !((Long) object.get("revision")).equals((Long) newDocument.get("dropbox_revision"))) && permittedExtensions.contains(newDocument.getFileExtension())) {
+					if ((newDocument.get("_dropbox_revision") == null || !((Long) object.get("revision")).equals((Long) newDocument.get("_dropbox_revision"))) && permittedExtensions.contains(newDocument.getFileExtension())) {
 						System.out.println("\tWill be processing: " + newDocument.getfileName());
 						//handle if we need to replace a file currently sitting in queue
 						if (findResult) {
-							System.out.println("\tUpdating file: " + ((Long) object.get("revision")) + " vs " + ((Long) newDocument.get("dropbox_revision")));
+							System.out.println("\tUpdating file: " + ((Long) object.get("revision")) + " vs " + ((Long) newDocument.get("_dropbox_revision")));
 							newDocument.setLocked(true); //lock it while we replace it's AWS S3 file
 							newDocument.commit(systemDB);
 							newDocument.setLocked(false);
@@ -143,7 +143,7 @@ public class Dropbox extends Service {
 						AWSS3 insertFile = new AWSS3(dboxFile);
 						insertFile.commit(wrapper);
 						if (insertFile.getID() != null) {
-							newDocument.put("dropbox_revision", (Long) object.get("revision"));
+							newDocument.put("_dropbox_revision", (Long) object.get("revision"));
 							newDocument.setStorageReference(insertFile.getID());
 							newDocument.commit(systemDB);
 						}

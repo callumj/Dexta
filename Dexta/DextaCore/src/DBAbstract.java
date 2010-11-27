@@ -30,6 +30,10 @@ public class DBAbstract extends BasicDBObject {
 		this.getMongoCollection(systemDB).save(this);
 	}
 	
+	public void delete(DB systemDB) {
+		this.getMongoCollection(systemDB).remove(this);
+	}
+	
 	public boolean find(DB systemDB) {
 		DBObject result = this.getMongoCollection(systemDB).findOne(this);
 		if (result != null) {

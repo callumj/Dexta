@@ -3,6 +3,7 @@ package com.dexta.coreservices.models.documents;
 import com.dexta.coreservices.models.base.DBAbstract;
 import com.dexta.coreservices.models.keywords.*;
 import com.dexta.coreservices.models.users.User;
+import com.dexta.coreservices.models.services.StorageService;
 
 import java.util.HashMap;
 import java.util.ArrayList;
@@ -17,13 +18,15 @@ public class Document extends DBAbstract {
 	public ArrayList<String> importants;
 	public StringBuilder documentContents;
 	
-	public Document() {	}
-	
-	public Document(User owner, String documentTitle, String resourceURI) {
+	public Document() {
 		super();
 		keywordList = new HashMap<String,ArrayList<KeywordDocument>>();
 		documentContents = new StringBuilder();
 		importants = new ArrayList<String>();
+	}
+	
+	public Document(User owner, String documentTitle, String resourceURI) {
+		this();
 		this.setUser(owner);
 		this.setDocumentTitle(documentTitle);
 		this.setResourceURI(resourceURI);
@@ -68,6 +71,22 @@ public class Document extends DBAbstract {
 		documentContents.append(input);
 	}
 	
+	public void setStorageReference(ObjectId storageID) {
+		this.put("storage", storageID);
+	}
+	
+	public ObjectId getStorageReference() {
+		return (ObjectId) this.get("storage");
+	}
+	
+	public StorageService getStorage(DB systemDB) {
+		StorageService returnObj = new StorageService();
+		returnObj.put("_id", this.getStorageReference());
+		if (returnObj.find(systemDB))
+			return returnObj;
+		else
+			return null;
+	}
 	
 	public void buildKeywords(int seekAmount) {
 		String[] words = documentContents.toString().split("\\s+");
@@ -122,6 +141,21 @@ public class Document extends DBAbstract {
 				keyword.setPreview(word);
 			}
 		}
+	}
+	
+	public HashMap<String, Object> removeNonImportants() {
+		HashMap<String, Object> removedItems = new HashMap<String, Object>();
+		ArrayList<String> remove = new ArrayList<String>();
+		for (String key : this.keySet()) {
+			if (key.startsWith("_"))
+				remove.add(key);
+		}
+		
+		for (String key : remove) {
+			removedItems.put(key, this.remove(key));
+		}
+		
+		return removedItems;
 	}
 	
 	public void commit(DB systemDB) {

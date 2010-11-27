@@ -2,11 +2,19 @@ package com.dexta.coreservices.models.documents;
 
 import com.dexta.coreservices.models.base.DBAbstract;
 import com.dexta.coreservices.models.services.Service;
+import com.dexta.tools.StorageWrapper;
+import com.dexta.coreservices.models.services.StorageService;
 
 import com.mongodb.DB;
 import org.bson.types.ObjectId;
 
+import java.util.regex.Pattern;
+
 public class PendingDocument extends DBAbstract {
+	
+	public PendingDocument() {
+		super();
+	}
 	
 	public PendingDocument(String fileName, Service parentService) {
 		super();
@@ -75,5 +83,28 @@ public class PendingDocument extends DBAbstract {
 				returnDoc.put(key, this.get(key));
 		}
 		return returnDoc;
+	}
+	
+	public Document transposeToDocument(StorageWrapper storageWrapper, Processor documentProcessor) {
+		DB systemDB = storageWrapper.mongoDatabase;
+		Document returnObj = this.toDocument();
+		StorageService stor = returnObj.getStorage(systemDB);
+		byte[] data = stor.getData(storageWrapper);
+		documentProcessor.setData(data);
+		documentProcessor.setFileExtension(this.getFileExtension());
+		returnObj.addDataToContent(documentProcessor.getText());
+		returnObj.buildKeywords(10);
+		returnObj.compact(2);
+		return returnObj;
+	}
+	
+	public static PendingDocument getPendingDocumentInQueue(DB systemDB, String file_ext) {
+		PendingDocument filter = new PendingDocument();
+		filter.setLocked(false);
+		filter.put("file_extension", Pattern.compile("(" + file_ext + ")", Pattern.CASE_INSENSITIVE));
+		if (filter.find(systemDB))
+			return filter;
+		else
+			return null;
 	}
 }

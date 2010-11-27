@@ -17,6 +17,7 @@ import java.util.Calendar;
 import com.mongodb.DB;
 import org.apache.http.HttpResponse;
 import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectResult;
 import com.amazonaws.auth.BasicAWSCredentials;
@@ -30,8 +31,48 @@ public class AWSS3 extends StorageService {
 		tempStream = ioStream;
 	}
 	
+	public AWSS3(StorageService parent) {
+		super();
+		for (String key : parent.keySet()) {
+				this.put(key, parent.get(key));
+		}
+	}
+	
 	private void setIndentifier(String name) {
 		this.put("reference", name);
+	}
+	
+	public String getIdentifier() {
+		return (String) this.get("reference");
+	}
+	
+	public byte[] getObjectContents(StorageWrapper wrapper) throws IOException {
+		DB systemDB = wrapper.mongoDatabase;
+		MemcachedClient memcacheProvider = wrapper.memcachedServer;
+		ServiceProvider amazonS3 = new ServiceProvider("awss3");
+		if (amazonS3.find(systemDB)) {
+			BasicAWSCredentials awsCred = new BasicAWSCredentials((String) amazonS3.get("consumer_key"), (String) amazonS3.get("consumer_secret"));
+            AmazonS3Client s3Client = new AmazonS3Client(awsCred);
+
+			S3Object s3Obj = s3Client.getObject((String) amazonS3.get("bucket_name"), this.getIdentifier());
+			ObjectMetadata objInfo = s3Obj.getObjectMetadata();
+			
+			InputStream awsStream = s3Obj.getObjectContent();
+			ByteArrayOutputStream rawBuffer = new ByteArrayOutputStream();
+			
+			int read=0;
+	        byte[] bytes = new byte[1024];
+
+	        while((read = awsStream.read(bytes))!= -1)
+					rawBuffer.write(bytes, 0, read);
+			
+			awsStream.close();
+			rawBuffer.flush();
+			rawBuffer.close();
+			return rawBuffer.toByteArray();
+		} else {
+			return null;
+		}
 	}
 	
 	public void commit(StorageWrapper wrapper) {
