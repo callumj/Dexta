@@ -4,6 +4,7 @@ import com.dexta.coreservices.models.base.DBAbstract;
 import com.dexta.tools.DropboxTools;
 import com.dexta.tools.StorageWrapper;
 import com.dexta.coreservices.models.documents.PendingDocument;
+import com.dexta.coreservices.models.documents.Document;
 
 import com.mongodb.DB;
 import com.dropbox.*;
@@ -106,25 +107,46 @@ public class Dropbox extends Service {
 
 	        DropboxClient dboxClient = new DropboxClient(thisUserSettings, authClient);
 	
-			ArrayList<JSONObject> updatedFiles = DropboxTools.getAllFilesForUser(dboxClient, new ArrayList<String>(Arrays.asList(this.getIgnorePath())), this.getLastCheck());
-			this.setLastCheck(Calendar.getInstance().getTimeInMillis() / 1000);
-			this.commit(systemDB);
+			ArrayList<JSONObject> updatedFiles = DropboxTools.getAllFilesForUser(dboxClient, new ArrayList<String>(Arrays.asList(this.getIgnorePath())), 0l);
+			System.out.println(updatedFiles.size());
 			for (JSONObject object : updatedFiles) {
 				String path = (String) object.get("path");
 				String fileName = path.substring(path.lastIndexOf("/") + 1);
 				
 				PendingDocument newDocument = new PendingDocument(fileName, this);
-				if (permittedExtensions.contains(newDocument.getFileExtension())) {
-					System.out.println("Will be processing: " + newDocument.getfileName());
-					//pull from Dropbox and insert into S3
-					HttpResponse dboxGet = dboxClient.getFile("dropbox", path);
-					InputStream dboxFile = dboxGet.getEntity().getContent();
-					//create the S3 file
-					AWSS3 insertFile = new AWSS3(dboxFile);
-					insertFile.commit(wrapper);
-					if (insertFile.getID() != null) {
-						newDocument.setStorageReference(insertFile.getID());
-						newDocument.commit(systemDB);
+				newDocument.setMimeType((String) object.get("mime_type"));
+				newDocument.put("dropbox_path", (String) object.get("path"));				
+				
+				//first check if the same document has not been processed and stored already
+				Document testDocument = newDocument.toDocument();
+				testDocument.put("dropbox_revision", (Long) object.get("revision"));
+				System.out.println("Now testing for: " + newDocument.getfileName());
+				if (!(testDocument.find(systemDB))) {
+					//now proceed to check if a similar document is in the queue (and not being processed)
+					newDocument.setLocked(false);
+					boolean findResult = newDocument.find(systemDB); //if we find one but with an older revision, we can update it
+					if ((newDocument.get("dropbox_revision") == null || !((Long) object.get("revision")).equals((Long) newDocument.get("dropbox_revision"))) && permittedExtensions.contains(newDocument.getFileExtension())) {
+						System.out.println("\tWill be processing: " + newDocument.getfileName());
+						//handle if we need to replace a file currently sitting in queue
+						if (findResult) {
+							System.out.println("\tUpdating file: " + ((Long) object.get("revision")) + " vs " + ((Long) newDocument.get("dropbox_revision")));
+							newDocument.setLocked(true); //lock it while we replace it's AWS S3 file
+							newDocument.commit(systemDB);
+							newDocument.setLocked(false);
+							System.in.read();
+						}
+						
+						//pull from Dropbox and insert into S3
+						HttpResponse dboxGet = dboxClient.getFile("dropbox", path);
+						InputStream dboxFile = dboxGet.getEntity().getContent();
+						//create the S3 file
+						AWSS3 insertFile = new AWSS3(dboxFile);
+						insertFile.commit(wrapper);
+						if (insertFile.getID() != null) {
+							newDocument.put("dropbox_revision", (Long) object.get("revision"));
+							newDocument.setStorageReference(insertFile.getID());
+							newDocument.commit(systemDB);
+						}
 					}
 				}
 			}

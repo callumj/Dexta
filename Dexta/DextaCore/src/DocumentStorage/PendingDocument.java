@@ -47,4 +47,33 @@ public class PendingDocument extends DBAbstract {
 	public ObjectId getStorageReference() {
 		return (ObjectId) this.get("storage");
 	}
+	
+	public void setMimeType(String mime) {
+		this.put("mime_type", mime);
+	}
+	
+	public String getMimeType() {
+		return (String) this.get("mime_type");
+	}
+	
+	public void setLocked(boolean status) {
+		this.put("locked", status);
+	}
+	
+	public Boolean isLocked() {
+		Boolean returnDecision = (Boolean) this.get("locked");
+		if (returnDecision != null && returnDecision)
+			return true;
+		else
+			return false;
+	}
+	
+	public Document toDocument() {
+		Document returnDoc = new Document();
+		for (String key : this.keySet()) {
+			if (!(key.equals("_id")))
+				returnDoc.put(key, this.get(key));
+		}
+		return returnDoc;
+	}
 }

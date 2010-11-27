@@ -17,6 +17,8 @@ public class Document extends DBAbstract {
 	public ArrayList<String> importants;
 	public StringBuilder documentContents;
 	
+	public Document() {	}
+	
 	public Document(User owner, String documentTitle, String resourceURI) {
 		super();
 		keywordList = new HashMap<String,ArrayList<KeywordDocument>>();

@@ -46,6 +46,7 @@ public class Main
 			dbox.addNewFiles(common);
 		}
 		
+		common.memcachedServer.shutdown();
 	}
 	
 	public static void doIndex(DB database) throws Exception {
