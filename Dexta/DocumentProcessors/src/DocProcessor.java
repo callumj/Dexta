@@ -24,42 +24,29 @@ public class DocProcessor implements Processor {
 	}
 	
 	
-	public String getText() {
+	public String getText() throws Exception {
 		ByteArrayInputStream ioStream = new ByteArrayInputStream(data);
 		
         if ("docx".equals(extension)) {
-            try {
+			XWPFDocument doc = new XWPFDocument(ioStream);
 
-                XWPFDocument doc = new XWPFDocument(ioStream);
+			XWPFWordExtractor extractor = new XWPFWordExtractor(doc);
 
-                XWPFWordExtractor extractor = new XWPFWordExtractor(doc);
-				
-				ioStream.close();
-                return extractor.getText();
-            } catch (Exception ioErr) {
-				System.out.println(ioErr);
-				return null;
-            }
-        } else if ("doc".equals(extension)) {
-            try {
-                POIFSFileSystem fs = new POIFSFileSystem(ioStream);
-
-                HWPFDocument doc = new HWPFDocument(fs);
-
-                WordExtractor extractor = new WordExtractor(doc);
-				
-				ioStream.close();
-               	return extractor.getText();
-            } catch (Exception ioErr2) {
-				System.out.println(ioErr2);
-                return null;
-            }
-        }
-		try {
 			ioStream.close();
-		} catch (IOException ioErr) {
-			System.out.println(ioErr);
-		}
+			return extractor.getText();
+
+        } else if ("doc".equals(extension)) {
+			POIFSFileSystem fs = new POIFSFileSystem(ioStream);
+
+			HWPFDocument doc = new HWPFDocument(fs);
+
+			WordExtractor extractor = new WordExtractor(doc);
+
+			ioStream.close();
+			return extractor.getText();
+        }
+
+		ioStream.close();
         return null;
 	}
 }

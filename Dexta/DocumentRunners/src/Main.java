@@ -7,7 +7,7 @@ import com.dexta.coreservices.models.documents.PendingDocument;
 import com.dexta.coreservices.models.services.Service;
 import com.dexta.tools.StorageWrapper;
 
-import com.dexta.processors.DocProcessor;
+import com.dexta.processors.PptProcessor;
 
 import com.mongodb.Mongo;
 import com.mongodb.DB;
@@ -41,13 +41,13 @@ public class Main
 		boolean quit = false;
 		
 		while (!quit) {
-			doc = PendingDocument.getPendingDocumentInQueue(database, "doc|docx");
+			doc = PendingDocument.getPendingDocumentInQueue(database, "ppt|pptx");
 			if (doc != null) {
 				try {
 					doc.setLocked(true);
 					doc.commit(database);
 					System.out.println("Processing " + doc.getfileName());
-					Document newDocument = doc.transposeToDocument(common, new DocProcessor());
+					Document newDocument = doc.transposeToDocument(common, new PptProcessor());
 					//check to see if the document already exists
 					HashMap<String, Object> removedContents = newDocument.removeNonImportants();
 					boolean find = newDocument.find(database); //if found the id would of been set, allowing us to perform an update automatically
@@ -62,6 +62,7 @@ public class Main
 				}
 			} else {
 				System.out.println("No document in queue");
+				Thread.sleep(5 * 1000);
 			}
 		}
 		

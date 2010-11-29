@@ -85,7 +85,7 @@ public class PendingDocument extends DBAbstract {
 		return returnDoc;
 	}
 	
-	public Document transposeToDocument(StorageWrapper storageWrapper, Processor documentProcessor) {
+	public Document transposeToDocument(StorageWrapper storageWrapper, Processor documentProcessor) throws Exception {
 		DB systemDB = storageWrapper.mongoDatabase;
 		Document returnObj = this.toDocument();
 		StorageService stor = returnObj.getStorage(systemDB);
