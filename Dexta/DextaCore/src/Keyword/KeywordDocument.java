@@ -4,6 +4,7 @@ import com.dexta.coreservices.models.base.DBAbstract;
 import com.dexta.coreservices.models.documents.Document;
 
 import com.mongodb.DB;
+import org.bson.types.ObjectId;
 
 public class KeywordDocument extends DBAbstract {
 	
@@ -32,9 +33,12 @@ public class KeywordDocument extends DBAbstract {
 		return word;
 	}
 	
+	public void setUser(ObjectId id) {
+		this.put("user", id);
+	}
+	
 	private void setDocument() {
 		this.put("document", parent.getID());
-		this.put("user", parent.getUserID());
 	}
 	
 	private void setKeyword() {		

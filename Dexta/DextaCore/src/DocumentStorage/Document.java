@@ -3,9 +3,11 @@ package com.dexta.coreservices.models.documents;
 import com.dexta.coreservices.models.base.DBAbstract;
 import com.dexta.coreservices.models.keywords.*;
 import com.dexta.coreservices.models.users.User;
+import com.dexta.coreservices.models.users.UserService;
 import com.dexta.coreservices.models.services.StorageService;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.ArrayList;
 import java.util.Set;
 import org.bson.types.ObjectId;
@@ -25,30 +27,12 @@ public class Document extends DBAbstract {
 		importants = new ArrayList<String>();
 	}
 	
-	public Document(User owner, String documentTitle, String resourceURI) {
-		this();
-		this.setUser(owner);
-		this.setDocumentTitle(documentTitle);
-		this.setResourceURI(resourceURI);
+	public void setServiceID(ObjectId id) {
+		this.put("service", id);
 	}
 	
-	public void setUser(User owner) {
-		this.setUserID(owner.getID());
-	}
-	
-	public User getUser(DB systemDB) {
-		User lookup = new User();
-		lookup.put("_id", this.getUserID());
-		lookup.find(systemDB);
-		return lookup;
-	}
-	
-	public void setUserID(ObjectId id) {
-		this.put("user", id);
-	}
-	
-	public ObjectId getUserID() {
-		return (ObjectId) this.get("user");
+	public ObjectId getServiceID() {
+		return (ObjectId) this.get("service");
 	}
 	
 	public void setDocumentTitle(String title) {
@@ -162,11 +146,16 @@ public class Document extends DBAbstract {
 		//set date added
 		this.put("date_added", Calendar.getInstance(java.util.TimeZone.getTimeZone("GMT")).getTimeInMillis() / 1000);
 		super.commit(systemDB);
+		List<UserService> sharedServices = UserService.getLinksForID(systemDB, getServiceID());
 		//update keywords and commit
 		for (String key : keywordList.keySet()) {
 			ArrayList<KeywordDocument> container = keywordList.get(key);
 			for (KeywordDocument linker : container) {
-				linker.commit(systemDB);
+				for (UserService svc : sharedServices) {
+					linker.setUser(svc.getUser());
+					linker.commit(systemDB);
+					linker.removeField("_id"); //pretend we are inserting a new one
+				}
 			}
 		}
 	}

@@ -7,7 +7,7 @@ import com.dexta.coreservices.models.documents.PendingDocument;
 import com.dexta.coreservices.models.services.Service;
 import com.dexta.tools.StorageWrapper;
 
-import com.dexta.processors.PptProcessor;
+import com.dexta.processors.DocProcessor;
 
 import com.mongodb.Mongo;
 import com.mongodb.DB;
@@ -41,24 +41,26 @@ public class Main
 		boolean quit = false;
 		
 		while (!quit) {
-			doc = PendingDocument.getPendingDocumentInQueue(database, "ppt|pptx");
+			doc = PendingDocument.getPendingDocumentInQueue(database, "doc");
 			if (doc != null) {
+				doc.setLocked(true);
+				doc.commit(database);
+				System.out.println("Processing " + doc.getfileName());
 				try {
-					doc.setLocked(true);
-					doc.commit(database);
-					System.out.println("Processing " + doc.getfileName());
-					Document newDocument = doc.transposeToDocument(common, new PptProcessor());
+					Document newDocument = doc.transposeToDocument(common, new DocProcessor());
+					
 					//check to see if the document already exists
 					HashMap<String, Object> removedContents = newDocument.removeNonImportants();
 					boolean find = newDocument.find(database); //if found the id would of been set, allowing us to perform an update automatically
 					//place the remove objects back in
 					for (String key : removedContents.keySet())
 						newDocument.put(key, removedContents.get(key));
-				
+
 					newDocument.commit(database);
 					doc.delete(database);
 				} catch (Exception err) {
-					System.out.println(err);
+					doc.put("error", err);
+					doc.commit(database);
 				}
 			} else {
 				System.out.println("No document in queue");
