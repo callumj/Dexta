@@ -5,7 +5,7 @@ import com.dexta.coreservices.models.users.UserService;
 import com.dexta.coreservices.models.documents.Document;
 
 import com.dexta.coreservices.models.services.AWSS3;
-import com.dexta.coreservices.models.services.Dropbox;
+import com.dexta.coreservices.models.services.GoogleDocs;
 import com.dexta.coreservices.models.services.Service;
 
 import com.dexta.tools.StorageWrapper;
@@ -37,13 +37,13 @@ public class Main
 		common.mongoDatabase = database;
 		common.memcachedServer = new MemcachedClient(new InetSocketAddress("localhost", 11211));
 		
-		List<Service> collection = UserService.getServicesForUser(database, myself, new Dropbox());
+		List<Service> collection = UserService.getServicesForUser(database, myself, new GoogleDocs());
 		System.out.println(collection.size());
 		
 		for (Service svc : collection) {
-			Dropbox dbox = new Dropbox(svc);
-			System.out.println(dbox.getTokenKey());
-			dbox.addNewFiles(common);
+			GoogleDocs dSvc = new GoogleDocs(svc);
+			System.out.println(dSvc.getName());
+			dSvc.addNewFiles(common);
 		}
 		
 		common.memcachedServer.shutdown();
